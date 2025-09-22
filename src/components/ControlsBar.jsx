@@ -1,6 +1,6 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faSync, faShare, faUserPlus, faUserMinus, faUsers } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faSync, faShare, faUserPlus, faUserMinus, faUsers, faUpload } from '@fortawesome/free-solid-svg-icons';
 import './ControlsBar.css'; // Import the CSS for WebRTC status styles
 
 /**
@@ -27,7 +27,9 @@ const ControlsBar = ({
   disconnectPeers,
   peerDiscoveryEnabled,
   setPeerDiscoveryEnabled,
-  isWebRTCActive // Hide check updates button when WebRTC is connecting/connected
+  isWebRTCActive, // Hide check updates button when WebRTC is connecting/connected
+  onShareFile, // File transfer function
+  fileTransferActive // Whether file transfer is in progress
 }) => {
   // Function to get WebRTC status message based on the connection stage
   const getRtcStatusMessage = () => {
@@ -90,6 +92,19 @@ const ControlsBar = ({
         >
           <FontAwesomeIcon icon={faShare} className="button-icon" /> Share
         </button>
+        
+        {/* File transfer button - only show when connected to peers */}
+        {rtcSupported && isRtcConnected && connectedPeers.length > 0 && (
+          <button 
+            className="file-share-button"
+            onClick={onShareFile}
+            disabled={fileTransferActive}
+            title={fileTransferActive ? "File transfer in progress..." : "Share a file with connected peers"}
+          >
+            <FontAwesomeIcon icon={faUpload} className="button-icon" /> 
+            {fileTransferActive ? 'Transferring...' : 'Share File'}
+          </button>
+        )}
         
         {rtcSupported && (
           <button 

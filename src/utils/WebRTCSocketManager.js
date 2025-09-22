@@ -55,6 +55,12 @@ export const useWebRTCManager = (
   const [debugMode, setDebugMode] = useState(false);
   const [debugData, setDebugData] = useState(null);
   
+  // File transfer state
+  const [fileTransferActive, setFileTransferActive] = useState(false);
+  const [transferProgress, setTransferProgress] = useState(0);
+  const [incomingFile, setIncomingFile] = useState(null);
+  const [fileTransferComplete, setFileTransferComplete] = useState(false);
+  
   // Refs to maintain state across re-renders
   const clientIdRef = useRef(null);
   const peerConnectionsRef = useRef({});
@@ -67,6 +73,9 @@ export const useWebRTCManager = (
   const peerDiscoveryEnabledRef = useRef(false);
   // Store pending ICE candidates that arrive before remote description is set
   const pendingIceCandidatesRef = useRef({});
+  // File transfer refs
+  const fileTransferRef = useRef({});
+  const receivedFileChunksRef = useRef({});
   
   // Function to announce presence to all active users in the session
   const sendPresenceAnnouncement = useCallback((force = false) => {
@@ -589,6 +598,213 @@ export const useWebRTCManager = (
     }
   }, [onWebRTCTextUpdate, setText, setSavedText, setServerText, setLastServerText, setHasChanges]);
   
+  // File transfer handlers
+  const handleFileTransferStart = useCallback((peerId, data) => {
+    console.log(`Starting file transfer from ${peerId}:`, data);
+    
+    // Initialize file transfer state
+    setFileTransferActive(true);
+    setTransferProgress(0);
+    setFileTransferComplete(false);
+    setIncomingFile({
+      name: data.fileName,
+      size: data.fileSize,
+      type: data.fileType,
+      from: peerId
+    });
+    
+    // Initialize chunks storage for this file
+    receivedFileChunksRef.current[peerId] = {
+      chunks: [],
+      totalSize: data.fileSize,
+      receivedSize: 0
+    };
+  }, []);
+  
+  const handleFileChunk = useCallback((peerId, data) => {
+    const transfer = receivedFileChunksRef.current[peerId];
+    if (!transfer) {
+      console.error('Received file chunk without transfer start');
+      return;
+    }
+    
+    // Convert base64 chunk back to binary
+    const binaryString = atob(data.chunk);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    transfer.chunks.push(bytes);
+    transfer.receivedSize += bytes.length;
+    
+    // Update progress
+    const progress = (transfer.receivedSize / transfer.totalSize) * 100;
+    setTransferProgress(progress);
+    
+    console.log(`File transfer progress: ${progress.toFixed(1)}%`);
+  }, []);
+  
+  const handleFileTransferComplete = useCallback((peerId) => {
+    const transfer = receivedFileChunksRef.current[peerId];
+    if (!transfer) {
+      console.error('File transfer complete without transfer data');
+      return;
+    }
+    
+    console.log('File transfer completed');
+    setTransferProgress(100);
+    setFileTransferComplete(true);
+    setFileTransferActive(false);
+  }, []);
+  
+  // Function to start file transfer
+  const startFileTransfer = useCallback((file) => {
+    const connectedPeers = Object.keys(dataChannelsRef.current).filter(
+      peerId => dataChannelsRef.current[peerId].readyState === 'open'
+    );
+    
+    if (connectedPeers.length === 0) {
+      console.error('No connected peers for file transfer');
+      return false;
+    }
+    
+    console.log(`Starting file transfer to ${connectedPeers.length} peers:`, file.name);
+    
+    // Set transfer state
+    setFileTransferActive(true);
+    setTransferProgress(0);
+    
+    // Store file info
+    fileTransferRef.current = {
+      file,
+      totalSize: file.size,
+      sentSize: 0,
+      peers: connectedPeers
+    };
+    
+    // Send file transfer start message to all peers
+    const startMessage = {
+      type: 'file_transfer_start',
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    };
+    
+    connectedPeers.forEach(peerId => {
+      try {
+        dataChannelsRef.current[peerId].send(JSON.stringify(startMessage));
+      } catch (error) {
+        console.error(`Error sending file start to peer ${peerId}:`, error);
+      }
+    });
+    
+    // Start sending file chunks
+    sendFileChunks(file, connectedPeers);
+    
+    return true;
+  }, []);
+  
+  // Function to send file in chunks
+  const sendFileChunks = useCallback((file, peers) => {
+    const chunkSize = 16384; // 16KB chunks
+    const reader = new FileReader();
+    let offset = 0;
+    
+    const sendNextChunk = () => {
+      if (offset >= file.size) {
+        // File transfer complete
+        console.log('File transfer completed');
+        const completeMessage = {
+          type: 'file_transfer_complete'
+        };
+        
+        peers.forEach(peerId => {
+          try {
+            dataChannelsRef.current[peerId].send(JSON.stringify(completeMessage));
+          } catch (error) {
+            console.error(`Error sending file complete to peer ${peerId}:`, error);
+          }
+        });
+        
+        setTransferProgress(100);
+        setFileTransferActive(false);
+        return;
+      }
+      
+      const chunk = file.slice(offset, offset + chunkSize);
+      reader.readAsArrayBuffer(chunk);
+    };
+    
+    reader.onload = (e) => {
+      const arrayBuffer = e.target.result;
+      const bytes = new Uint8Array(arrayBuffer);
+      
+      // Convert to base64 for JSON transmission
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64Chunk = btoa(binary);
+      
+      const chunkMessage = {
+        type: 'file_chunk',
+        chunk: base64Chunk,
+        offset: offset,
+        size: bytes.length
+      };
+      
+      peers.forEach(peerId => {
+        try {
+          dataChannelsRef.current[peerId].send(JSON.stringify(chunkMessage));
+        } catch (error) {
+          console.error(`Error sending file chunk to peer ${peerId}:`, error);
+        }
+      });
+      
+      offset += bytes.length;
+      
+      // Update progress
+      const progress = (offset / file.size) * 100;
+      setTransferProgress(progress);
+      
+      // Continue with next chunk
+      setTimeout(sendNextChunk, 10); // Small delay to prevent overwhelming
+    };
+    
+    reader.onerror = (error) => {
+      console.error('Error reading file chunk:', error);
+    };
+    
+    sendNextChunk();
+  }, []);
+  
+  // Function to save received file
+  const saveReceivedFile = useCallback(() => {
+    if (!incomingFile) return;
+    
+    const transfer = receivedFileChunksRef.current[incomingFile.from];
+    if (!transfer) return;
+    
+    // Combine all chunks into a single blob
+    const blob = new Blob(transfer.chunks, { type: incomingFile.type });
+    
+    // Create download link
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = incomingFile.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    // Clean up
+    delete receivedFileChunksRef.current[incomingFile.from];
+    setIncomingFile(null);
+    setFileTransferComplete(false);
+  }, [incomingFile]);
+  
   // Set up data channel for a peer
   const setupDataChannel = useCallback((dataChannel, peerId) => {
     console.log(`Setting up data channel for peer ${peerId}`);
@@ -649,6 +865,14 @@ export const useWebRTCManager = (
         if (data.type === 'text_update') {
           console.log(`Received text update from ${peerId}, length: ${data.text.length}`);
           handleTextUpdate(data.text);
+        } else if (data.type === 'file_transfer_start') {
+          console.log(`Receiving file transfer start from ${peerId}:`, data.fileName);
+          handleFileTransferStart(peerId, data);
+        } else if (data.type === 'file_chunk') {
+          handleFileChunk(peerId, data);
+        } else if (data.type === 'file_transfer_complete') {
+          console.log(`File transfer complete from ${peerId}`);
+          handleFileTransferComplete(peerId);
         }
       } catch (error) {
         console.error('Error processing message:', error);
@@ -823,6 +1047,13 @@ export const useWebRTCManager = (
     // Add method to send text to all peers
     sendTextToAllPeers: broadcastTextToAllPeers,
     // Add isPollingPaused for the App component
-    isPollingPaused: false
+    isPollingPaused: false,
+    // File transfer functionality
+    fileTransferActive,
+    transferProgress,
+    incomingFile,
+    fileTransferComplete,
+    startFileTransfer,
+    saveReceivedFile
   };
 };

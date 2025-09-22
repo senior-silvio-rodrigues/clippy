@@ -337,6 +337,11 @@ body.dark-theme {
   line-height: 1.5;
 }
 
+/* Dark theme styles for home page bullets */
+.dark-theme .app-info li {
+  color: var(--text-color);
+}
+
 /* Text Share Page Styles */
 .text-share-container {
   display: flex;
@@ -950,7 +955,7 @@ textarea::placeholder {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 1rem;
   border-bottom: 1px solid var(--border-color);
 }
 

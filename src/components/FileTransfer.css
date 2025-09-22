@@ -1,0 +1,272 @@
+/* FileTransfer.css - Styles for file transfer modals */
+
+.file-transfer-modal,
+.file-receive-modal {
+  max-width: 500px;
+  width: 90%;
+}
+
+.file-transfer-modal .modal-body {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.file-transfer-modal .modal-footer {
+  padding: 0 20px 20px 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.file-receive-modal .modal-body {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.file-receive-modal .modal-footer {
+  padding: 0 20px 20px 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+
+.file-drop-zone {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #f9f9f9;
+  margin: 20px 0;
+}
+
+.file-drop-zone:hover {
+  border-color: #007bff;
+  background-color: #f0f8ff;
+}
+
+.file-drop-zone.drag-over {
+  border-color: #007bff;
+  background-color: #e6f3ff;
+  transform: scale(1.02);
+}
+
+.file-drop-zone svg {
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.file-drop-zone p {
+  margin: 5px 0;
+  color: #666;
+}
+
+.file-limit {
+  font-size: 0.85em;
+  color: #999;
+}
+
+.selected-file {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.selected-file h4 {
+  margin: 0 0 10px 0;
+  color: #495057;
+}
+
+.file-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.file-name {
+  font-weight: 500;
+  color: #495057;
+  word-break: break-word;
+  flex: 1;
+}
+
+.file-size {
+  color: #6c757d;
+  font-size: 0.9em;
+}
+
+.transfer-progress {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.transfer-progress h4 {
+  margin-bottom: 20px;
+  word-break: break-word;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 20px;
+  background-color: #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 15px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #007bff, #0056b3);
+  transition: width 0.3s ease;
+  border-radius: 10px;
+}
+
+.transfer-note {
+  font-size: 0.9em;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 15px;
+}
+
+.file-receive-modal .file-info {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.file-receive-modal .file-info svg {
+  color: #007bff;
+  margin-bottom: 15px;
+}
+
+.file-receive-modal .file-info h4 {
+  margin: 10px 0;
+  word-break: break-word;
+}
+
+.transfer-complete {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.success-message {
+  color: #28a745;
+  font-size: 1.1em;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.receiving-text {
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Dark theme support */
+.dark-theme .file-drop-zone {
+  background-color: #2d3748;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+.dark-theme .file-drop-zone:hover {
+  background-color: #3d4852;
+  border-color: #63b3ed;
+}
+
+.dark-theme .file-drop-zone.drag-over {
+  background-color: #2a4a6b;
+  border-color: #63b3ed;
+}
+
+.dark-theme .selected-file {
+  background-color: #2d3748;
+  border-color: #4a5568;
+}
+
+.dark-theme .file-name,
+.dark-theme .selected-file h4 {
+  color: #e2e8f0;
+}
+
+.dark-theme .file-size,
+.dark-theme .transfer-note,
+.dark-theme .receiving-text {
+  color: #a0aec0;
+}
+
+.dark-theme .progress-bar {
+  background-color: #4a5568;
+}
+
+/* Dark theme button styles */
+.dark-theme .file-transfer-modal .btn-primary {
+  background-color: #4299e1;
+  border-color: #4299e1;
+  color: #ffffff;
+}
+
+.dark-theme .file-transfer-modal .btn-primary:hover {
+  background-color: #3182ce;
+  border-color: #3182ce;
+  color: #ffffff;
+}
+
+.dark-theme .file-transfer-modal .btn-secondary {
+  background-color: #4a5568;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+.dark-theme .file-transfer-modal .btn-secondary:hover {
+  background-color: #2d3748;
+  border-color: #2d3748;
+  color: #ffffff;
+}
+
+.dark-theme .file-receive-modal .btn-primary {
+  background-color: #4299e1;
+  border-color: #4299e1;
+  color: #ffffff;
+}
+
+.dark-theme .file-receive-modal .btn-primary:hover {
+  background-color: #3182ce;
+  border-color: #3182ce;
+  color: #ffffff;
+}
+
+.dark-theme .file-receive-modal .btn-secondary {
+  background-color: #4a5568;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+.dark-theme .file-receive-modal .btn-secondary:hover {
+  background-color: #2d3748;
+  border-color: #2d3748;
+  color: #ffffff;
+}
+
+/* Dark theme close button styles */
+.dark-theme .file-transfer-modal .btn-close,
+.dark-theme .file-receive-modal .btn-close {
+  background: none !important;
+  border: none !important;
+  color: #ffffff !important;
+  opacity: 0.8;
+  font-size: 1.2rem;
+}
+
+.dark-theme .file-transfer-modal .btn-close:hover,
+.dark-theme .file-receive-modal .btn-close:hover {
+  background: none !important;
+  border: none !important;
+  color: #ffffff !important;
+  opacity: 1;
+}

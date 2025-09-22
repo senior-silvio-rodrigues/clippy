@@ -8,8 +8,11 @@ import TextAreaContainer from './components/TextAreaContainer.jsx';
 import ControlsBar from './components/ControlsBar.jsx';
 import Footer from './components/Footer.jsx';
 import ShareModal from './components/ShareModal.jsx';
+import FileTransferModal from './components/FileTransferModal.jsx';
+import FileReceiveModal from './components/FileReceiveModal.jsx';
 import ThemeToggle from './components/ThemeToggle.jsx';
 import Toast from './components/Toast.jsx';
+import './components/FileTransfer.css';
 import { useTheme } from './theme/ThemeContext.jsx';
 import { useTextManager } from './hooks/useTextManager.js';
 import { useDraftManager } from './hooks/useDraftManager.js';
@@ -80,6 +83,7 @@ function TextShareApp() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('info');
+  const [showFileTransferModal, setShowFileTransferModal] = useState(false);
 
   // Ref to store the updateTextFromExternal function for WebRTC
   const updateTextFromExternalRef = useRef(null);
@@ -104,7 +108,14 @@ function TextShareApp() {
     debugMode,
     debugData,
     sendTextToAllPeers,
-    isPollingPaused
+    isPollingPaused,
+    // File transfer functionality
+    fileTransferActive,
+    transferProgress,
+    incomingFile,
+    fileTransferComplete,
+    startFileTransfer,
+    saveReceivedFile
   } = useWebRTCManager(
     id,
     '', // Don't pass current text to avoid feedback loops
@@ -137,7 +148,7 @@ function TextShareApp() {
     MAX_TEXT_LENGTH,
     setIsPollingPausedFromTyping,
     handleTypingStart,
-    broadcastTextToAllPeers: rtcConnected ? sendTextToAllPeers : null
+    broadcastTextToAllPeers: rtcConnected && !fileTransferActive ? sendTextToAllPeers : null
   });
 
   // Set the ref for WebRTC to use updateTextFromExternal
@@ -635,6 +646,37 @@ function TextShareApp() {
     setShowToast(false);
   }, []);
 
+  // File transfer handlers
+  const handleShareFile = useCallback(() => {
+    if (!rtcConnected || !webrtcActiveUsers > 1) {
+      alert('You need to be connected to peers to share files');
+      return;
+    }
+    setShowFileTransferModal(true);
+  }, [rtcConnected, webrtcActiveUsers]);
+
+  const handleFileSelect = useCallback((file) => {
+    if (file.size > 16 * 1024 * 1024) { // 16MB limit
+      alert('File is too large. Maximum size is 16MB.');
+      return;
+    }
+    
+    const success = startFileTransfer(file);
+    if (success) {
+      setShowFileTransferModal(false);
+    } else {
+      alert('Failed to start file transfer. Make sure you are connected to peers.');
+    }
+  }, [startFileTransfer]);
+
+  const handleCloseFileTransferModal = useCallback(() => {
+    setShowFileTransferModal(false);
+  }, []);
+
+  const handleSaveReceivedFile = useCallback(() => {
+    saveReceivedFile();
+  }, [saveReceivedFile]);
+
   
   // Render
   return (
@@ -733,6 +775,9 @@ function TextShareApp() {
             disconnectPeers={disconnectPeers}
             peerDiscoveryEnabled={peerDiscoveryEnabled}
             setPeerDiscoveryEnabled={setPeerDiscoveryEnabled}
+            // File transfer
+            onShareFile={handleShareFile}
+            fileTransferActive={fileTransferActive}
           />
           
           <Footer />
@@ -745,6 +790,26 @@ function TextShareApp() {
               rtcConnected={isRtcConnected}
             />
           )}
+          
+          {/* File Transfer Modal */}
+          <FileTransferModal
+            show={showFileTransferModal}
+            onClose={handleCloseFileTransferModal}
+            onFileSelect={handleFileSelect}
+            isTransferring={fileTransferActive}
+            transferProgress={transferProgress}
+            connectedPeers={Object.keys(dataChannelStatus || {})}
+          />
+          
+          {/* File Receive Modal */}
+          <FileReceiveModal
+            show={!!incomingFile}
+            onClose={() => setIncomingFile(null)}
+            incomingFile={incomingFile}
+            transferProgress={transferProgress}
+            onSaveFile={handleSaveReceivedFile}
+            isComplete={fileTransferComplete}
+          />
           
           {/* Toast notification for updates */}
           <Toast 

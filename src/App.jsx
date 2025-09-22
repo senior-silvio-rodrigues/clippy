@@ -113,6 +113,7 @@ function TextShareApp() {
     fileTransferActive,
     transferProgress,
     incomingFile,
+    setIncomingFile,
     fileTransferComplete,
     startFileTransfer,
     saveReceivedFile
@@ -656,8 +657,8 @@ function TextShareApp() {
   }, [rtcConnected, webrtcActiveUsers]);
 
   const handleFileSelect = useCallback((file) => {
-    if (file.size > 16 * 1024 * 1024) { // 16MB limit
-      alert('File is too large. Maximum size is 16MB.');
+    if (file.size > 20 * 1024 * 1024) { // 20MB limit
+      alert('File is too large. Maximum size is 20MB.');
       return;
     }
     

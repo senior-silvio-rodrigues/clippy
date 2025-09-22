@@ -1,5 +1,10 @@
 // FileTransferModal.jsx - Modal for file transfer functionality
 import React, { useState, useRef } from 'react';
+import { FontAwesome from '@fortawesome/react-fontawesome';
+import { faUpload, faFile } from '@fortawesome/free-solid-svg-icons';eTransferModal.jsx - Modal for file transfer functionality
+import React, { use                <FontAwesome icon={faFile} size="3x" />
+                <p>Drop a file here or click to select</p>
+                <p className="file-limit">Maximum file size: 20 MB</p>te, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUpload, faFile } from '@fortawesome/free-solid-svg-icons';
 
@@ -73,55 +78,47 @@ const FileTransferModal = ({
         <div className="modal-body">
           {!isTransferring ? (
             <>
-              {!selectedFile ? (
-                <div 
-                  className={`file-drop-zone ${dragOver ? 'drag-over' : ''}`}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <FontAwesomeIcon icon={faFile} size="3x" />
-                  <p>Drop a file here or click to select</p>
-                  <p className="file-limit">Maximum file size: 20 MB</p>
-                </div>
-              ) : (
-                <div className="selected-file">
-                  <h4>Selected File:</h4>
-                  <p className="file-name">{selectedFile.name}</p>
-                  <p className="file-size">Size: {formatFileSize(selectedFile.size)}</p>
-                  {selectedFile.size > 20 * 1024 * 1024 && (
-                    <p className="error-message">⚠️ File is too large. Maximum size is 20 MB.</p>
-                  )}
-                  <button 
-                    className="btn btn-secondary" 
-                    onClick={() => setSelectedFile(null)}
-                  >
-                    Choose Different File
-                  </button>
-                </div>
-              )}
+              <p>Share a file with {connectedPeers.length} connected peer{connectedPeers.length !== 1 ? 's' : ''}.</p>
+              
+              <div 
+                className={`file-drop-zone ${dragOver ? 'drag-over' : ''}`}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <FontAwesomeIcon icon={faFile} size="3x" />
+                <p>Drop a file here or click to select</p>
+                <p className="file-limit">Maximum file size: 16 MB</p>
+              </div>
               
               <input
                 ref={fileInputRef}
                 type="file"
-                style={{ display: 'none' }}
                 onChange={handleFileSelect}
+                style={{ display: 'none' }}
               />
               
-              <div className="peer-info">
-                <p>File will be sent to {connectedPeers.length} connected peer(s)</p>
-              </div>
+              {selectedFile && (
+                <div className="selected-file">
+                  <h4>Selected File:</h4>
+                  <div className="file-info">
+                    <span className="file-name">{selectedFile.name}</span>
+                    <span className="file-size">{formatFileSize(selectedFile.size)}</span>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="transfer-progress">
+              <h4>Transferring: {selectedFile?.name}</h4>
               <div className="progress-bar">
                 <div 
                   className="progress-fill" 
                   style={{ width: `${transferProgress}%` }}
                 ></div>
               </div>
-              <p>Transferring... {transferProgress.toFixed(1)}% complete</p>
+              <p>{transferProgress.toFixed(1)}% complete</p>
               <p className="transfer-note">Text updates are paused during file transfer</p>
             </div>
           )}
@@ -133,7 +130,7 @@ const FileTransferModal = ({
               <button 
                 className="btn btn-primary" 
                 onClick={handleStartTransfer}
-                disabled={!selectedFile || selectedFile.size > 20 * 1024 * 1024}
+                disabled={!selectedFile || selectedFile.size > 16 * 1024 * 1024}
               >
                 <FontAwesomeIcon icon={faUpload} /> Share File
               </button>

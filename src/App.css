@@ -118,6 +118,10 @@ body.dark-theme {
   border-color: #2a3c54;
 }
 
+.dark-theme .app-title h1 {
+  color: var(--text-color);
+}
+
 .header-updates {
   font-size: 0.85rem;
   color: #856404;

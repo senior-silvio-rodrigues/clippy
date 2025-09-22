@@ -1052,6 +1052,7 @@ export const useWebRTCManager = (
     fileTransferActive,
     transferProgress,
     incomingFile,
+    setIncomingFile,
     fileTransferComplete,
     startFileTransfer,
     saveReceivedFile
